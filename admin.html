@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Control — Hermandad del Barrio</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA DE LOGIN
+  ══════════════════════════════════════ -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-box">
+      <div class="login-cross">✝</div>
+      <h1 class="login-title">Panel de Control</h1>
+      <p class="login-sub">Hermandad del Barrio · Medina Sidonia</p>
+
+      <div class="login-field">
+        <label for="pin-input">Contraseña de acceso</label>
+        <input id="pin-input" type="password" placeholder="••••••" autocomplete="current-password">
+        <p id="login-err" class="login-err" hidden>Contraseña incorrecta. Inténtalo de nuevo.</p>
+      </div>
+
+      <button class="btn-gold" onclick="checkPin()">
+        <i class="fa-solid fa-unlock-keyhole"></i> Acceder al panel
+      </button>
+
+      <p class="login-hint">Contraseña inicial: <code>1975</code></p>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════
+       PANEL PRINCIPAL
+  ══════════════════════════════════════ -->
+  <div id="panel" class="panel" hidden>
+
+    <!-- Cabecera -->
+    <header class="ph">
+      <div class="ph-brand">
+        <span class="ph-cross">✝</span>
+        <div>
+          <p class="ph-title">Panel de Control</p>
+          <p class="ph-sub">Hermandad del Barrio · Medina Sidonia</p>
+        </div>
+      </div>
+      <nav class="ph-nav">
+        <a href="index.html" target="_blank" class="btn-ghost">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <span>Ver web</span>
+        </a>
+        <button class="btn-ghost" onclick="showChangePwd()">
+          <i class="fa-solid fa-key"></i>
+          <span>Contraseña</span>
+        </button>
+        <button class="btn-ghost" onclick="logout()">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Salir</span>
+        </button>
+      </nav>
+    </header>
+
+    <!-- Contenido principal -->
+    <main class="pm">
+
+      <!-- Barra de herramientas -->
+      <div class="pm-toolbar">
+        <div>
+          <h2 class="pm-heading">
+            <i class="fa-solid fa-newspaper"></i> Últimas Noticias
+          </h2>
+          <p class="pm-count" id="noticias-count"></p>
+        </div>
+        <button class="btn-gold" onclick="openForm()">
+          <i class="fa-solid fa-plus"></i> Nueva noticia
+        </button>
+      </div>
+
+      <!-- Lista de noticias -->
+      <div id="noticias-list" class="nl"></div>
+
+      <!-- Acciones secundarias -->
+      <div class="pm-actions">
+        <button class="btn-ghost-sm" onclick="exportJSON()">
+          <i class="fa-solid fa-file-export"></i> Exportar JSON
+        </button>
+        <button class="btn-ghost-sm" onclick="triggerImport()">
+          <i class="fa-solid fa-file-import"></i> Importar JSON
+        </button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
+        <button class="btn-danger-sm" onclick="resetDefault()">
+          <i class="fa-solid fa-rotate-left"></i> Restaurar datos originales
+        </button>
+      </div>
+
+    </main>
+  </div><!-- /panel -->
+
+
+  <!-- ══════════════════════════════════════
+       DRAWER — FORMULARIO
+  ══════════════════════════════════════ -->
+  <div id="drawer-overlay" class="drawer-overlay" hidden onclick="closeForm()"></div>
+
+  <aside id="drawer" class="drawer" hidden>
+    <div class="drawer-header">
+      <h2 id="drawer-title">Nueva Noticia</h2>
+      <button class="btn-close" onclick="closeForm()" title="Cerrar">✕</button>
+    </div>
+
+    <form id="noticia-form" class="drawer-form" onsubmit="saveNoticia(event)">
+      <input type="hidden" id="f-id">
+
+      <div class="fg">
+        <label for="f-titulo">Título *</label>
+        <input id="f-titulo" type="text" required
+               placeholder="Ej: Cabildo General de Elecciones">
+      </div>
+
+      <div class="fg">
+        <label for="f-extracto">Extracto / Resumen *</label>
+        <textarea id="f-extracto" required
+                  placeholder="Breve descripción de la noticia (2–3 frases)"></textarea>
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label for="f-tag">Etiqueta / Categoría *</label>
+          <input id="f-tag" type="text" required
+                 placeholder="Ej: Cultos, Cabildo, Convocatoria…">
+        </div>
+        <div class="fg">
+          <label for="f-icono">Icono (emoji)</label>
+          <input id="f-icono" type="text" maxlength="4"
+                 placeholder="✝">
+        </div>
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label for="f-fecha">Fecha *</label>
+          <input id="f-fecha" type="date" required>
+        </div>
+        <div class="fg">
+          <label for="f-tipo">Color de la tarjeta</label>
+          <select id="f-tipo">
+            <option value="tipo-a">Estilo A — Morado</option>
+            <option value="tipo-b">Estilo B — Azul</option>
+            <option value="tipo-c">Estilo C — Violeta</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label for="f-enlace">Enlace "Leer más" (opcional)</label>
+        <input id="f-enlace" type="url"
+               placeholder="https://...">
+        <small>Dejar vacío si no hay página de detalle</small>
+      </div>
+
+      <!-- ── FOTO PRINCIPAL ── -->
+      <div class="fg">
+        <label>Foto principal</label>
+        <div class="img-drop" id="main-drop"
+             onclick="document.getElementById('main-file').click()"
+             ondragover="event.preventDefault()"
+             ondrop="handleMainDrop(event)">
+          <div id="main-empty" class="img-drop-empty">
+            <i class="fa-solid fa-image"></i>
+            <p>Haz clic o arrastra una foto</p>
+            <small>JPG, PNG o WebP · Se comprime automáticamente</small>
+          </div>
+          <img id="main-preview" class="img-preview-full" style="display:none" alt="Vista previa">
+        </div>
+        <input type="file" id="main-file" accept="image/*" style="display:none"
+               onchange="handleMainFile(event)">
+        <div id="main-actions" class="img-actions" style="display:none">
+          <button type="button" id="main-upload-btn" class="btn-ghost-sm"
+                  onclick="document.getElementById('main-file').click()">
+            <i class="fa-solid fa-arrows-rotate"></i> Cambiar foto
+          </button>
+          <button type="button" class="btn-danger-sm" onclick="removeMainImg()">
+            <i class="fa-solid fa-trash"></i> Quitar foto
+          </button>
+        </div>
+      </div>
+
+      <!-- ── FOTOS SECUNDARIAS ── -->
+      <div class="fg">
+        <label>
+          Galería de fotos
+          <span class="lbl-opt">(opcional · se guardan con la noticia)</span>
+        </label>
+        <div id="sec-grid" class="sec-grid"></div>
+        <button type="button" id="sec-add-btn" class="btn-ghost-sm sec-add-btn"
+                onclick="document.getElementById('sec-file').click()">
+          <i class="fa-solid fa-plus"></i> Añadir fotos
+        </button>
+        <input type="file" id="sec-file" accept="image/*" multiple style="display:none"
+               onchange="handleSecFiles(event)">
+      </div>
+
+      <div class="drawer-footer">
+        <button type="button" class="btn-ghost" onclick="closeForm()">Cancelar</button>
+        <button type="submit" class="btn-gold">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar noticia
+        </button>
+      </div>
+    </form>
+  </aside>
+
+
+  <!-- ══════════════════════════════════════
+       MODAL — CONFIRMAR ELIMINACIÓN
+  ══════════════════════════════════════ -->
+  <div id="del-modal" class="modal-overlay" hidden
+       onclick="if(event.target===this) hideModal('del-modal')">
+    <div class="modal-box modal-box--sm">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-triangle-exclamation" style="color:#c0392b"></i>
+          Eliminar noticia
+        </h3>
+        <button class="btn-close" onclick="hideModal('del-modal')">✕</button>
+      </div>
+      <p class="modal-text">
+        ¿Seguro que quieres eliminar<br>
+        <strong id="del-titulo-preview" style="color:var(--text)"></strong>?<br>
+        Esta acción no se puede deshacer.
+      </p>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="hideModal('del-modal')">Cancelar</button>
+        <button class="btn-danger" onclick="executeDel()">
+          <i class="fa-solid fa-trash"></i> Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════
+       MODAL — CAMBIAR CONTRASEÑA
+  ══════════════════════════════════════ -->
+  <div id="pwd-modal" class="modal-overlay" hidden
+       onclick="if(event.target===this) hideModal('pwd-modal')">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-key" style="color:var(--gold)"></i> Cambiar contraseña</h3>
+        <button class="btn-close" onclick="hideModal('pwd-modal')">✕</button>
+      </div>
+
+      <div class="fg">
+        <label for="pwd-current">Contraseña actual</label>
+        <input id="pwd-current" type="password" placeholder="Contraseña actual"
+               autocomplete="current-password">
+      </div>
+      <div class="fg">
+        <label for="pwd-new">Nueva contraseña</label>
+        <input id="pwd-new" type="password" placeholder="Mínimo 4 caracteres"
+               autocomplete="new-password">
+      </div>
+      <div class="fg">
+        <label for="pwd-confirm">Confirmar nueva contraseña</label>
+        <input id="pwd-confirm" type="password" placeholder="Repite la nueva contraseña"
+               autocomplete="new-password"
+               onkeydown="if(event.key==='Enter') changePwd()">
+      </div>
+
+      <p id="pwd-err" class="login-err" hidden></p>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="hideModal('pwd-modal')">Cancelar</button>
+        <button class="btn-gold" onclick="changePwd()">
+          <i class="fa-solid fa-key"></i> Cambiar contraseña
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════
+       MODAL — RESTAURAR DATOS
+  ══════════════════════════════════════ -->
+  <div id="reset-modal" class="modal-overlay" hidden
+       onclick="if(event.target===this) hideModal('reset-modal')">
+    <div class="modal-box modal-box--sm">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-rotate-left" style="color:var(--gold)"></i>
+          Restaurar datos originales
+        </h3>
+        <button class="btn-close" onclick="hideModal('reset-modal')">✕</button>
+      </div>
+      <p class="modal-text">
+        Se eliminarán todas las noticias actuales y se restaurarán
+        las tres noticias de ejemplo originales.<br><br>
+        ¿Continuar?
+      </p>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="hideModal('reset-modal')">Cancelar</button>
+        <button class="btn-danger" onclick="executeReset()">
+          <i class="fa-solid fa-rotate-left"></i> Sí, restaurar
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/noticias.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

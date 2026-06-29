@@ -69,35 +69,72 @@
     <!-- Contenido principal -->
     <main class="pm">
 
-      <!-- Barra de herramientas -->
-      <div class="pm-toolbar">
-        <div>
-          <h2 class="pm-heading">
-            <i class="fa-solid fa-newspaper"></i> Últimas Noticias
-          </h2>
-          <p class="pm-count" id="noticias-count"></p>
+      <!-- Tabs -->
+      <div class="pm-tabs">
+        <button class="pm-tab active" id="tab-noticias" onclick="switchTab('noticias')">
+          <i class="fa-solid fa-newspaper"></i> Noticias
+        </button>
+        <button class="pm-tab" id="tab-agenda" onclick="switchTab('agenda')">
+          <i class="fa-regular fa-calendar-days"></i> Agenda
+        </button>
+      </div>
+
+      <!-- ── SECCIÓN NOTICIAS ── -->
+      <div id="section-noticias">
+
+        <div class="pm-toolbar">
+          <div>
+            <h2 class="pm-heading">
+              <i class="fa-solid fa-newspaper"></i> Últimas Noticias
+            </h2>
+            <p class="pm-count" id="noticias-count"></p>
+          </div>
+          <button class="btn-gold" onclick="openForm()">
+            <i class="fa-solid fa-plus"></i> Nueva noticia
+          </button>
         </div>
-        <button class="btn-gold" onclick="openForm()">
-          <i class="fa-solid fa-plus"></i> Nueva noticia
-        </button>
-      </div>
 
-      <!-- Lista de noticias -->
-      <div id="noticias-list" class="nl"></div>
+        <div id="noticias-list" class="nl"></div>
 
-      <!-- Acciones secundarias -->
-      <div class="pm-actions">
-        <button class="btn-ghost-sm" onclick="exportJSON()">
-          <i class="fa-solid fa-file-export"></i> Exportar JSON
-        </button>
-        <button class="btn-ghost-sm" onclick="triggerImport()">
-          <i class="fa-solid fa-file-import"></i> Importar JSON
-        </button>
-        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
-        <button class="btn-danger-sm" onclick="resetDefault()">
-          <i class="fa-solid fa-rotate-left"></i> Restaurar datos originales
-        </button>
-      </div>
+        <div class="pm-actions">
+          <button class="btn-ghost-sm" onclick="exportJSON()">
+            <i class="fa-solid fa-file-export"></i> Exportar JSON
+          </button>
+          <button class="btn-ghost-sm" onclick="triggerImport()">
+            <i class="fa-solid fa-file-import"></i> Importar JSON
+          </button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
+          <button class="btn-danger-sm" onclick="resetDefault()">
+            <i class="fa-solid fa-rotate-left"></i> Restaurar datos originales
+          </button>
+        </div>
+
+      </div><!-- /section-noticias -->
+
+      <!-- ── SECCIÓN AGENDA ── -->
+      <div id="section-agenda" style="display:none">
+
+        <div class="pm-toolbar">
+          <div>
+            <h2 class="pm-heading">
+              <i class="fa-regular fa-calendar-days"></i> Agenda y Cultos
+            </h2>
+            <p class="pm-count" id="eventos-count"></p>
+          </div>
+          <button class="btn-gold" onclick="openEventForm()">
+            <i class="fa-solid fa-plus"></i> Nuevo acto
+          </button>
+        </div>
+
+        <div id="eventos-list" class="nl"></div>
+
+        <div class="pm-actions">
+          <button class="btn-danger-sm" onclick="resetEventosDefault()">
+            <i class="fa-solid fa-rotate-left"></i> Restaurar actos originales
+          </button>
+        </div>
+
+      </div><!-- /section-agenda -->
 
     </main>
   </div><!-- /panel -->
@@ -312,6 +349,126 @@
   </div>
 
 
+  <!-- ══════════════════════════════════════
+       DRAWER — FORMULARIO DE EVENTO
+  ══════════════════════════════════════ -->
+  <div id="ev-drawer-overlay" class="drawer-overlay" hidden onclick="closeEventForm()"></div>
+
+  <aside id="ev-drawer" class="drawer" hidden>
+    <div class="drawer-header">
+      <h2 id="ev-drawer-title">Nuevo Acto</h2>
+      <button class="btn-close" onclick="closeEventForm()" title="Cerrar">✕</button>
+    </div>
+
+    <form id="evento-form" class="drawer-form" onsubmit="saveEvento(event)">
+      <input type="hidden" id="ef-id">
+
+      <div class="fg">
+        <label for="ef-titulo">Título del acto *</label>
+        <input id="ef-titulo" type="text" required
+               placeholder="Ej: Santo Rosario de la Aurora">
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label for="ef-tipo">Tipo de acto *</label>
+          <select id="ef-tipo" required>
+            <option value="CULTO">Culto</option>
+            <option value="CABILDO">Cabildo</option>
+            <option value="CONVIVENCIA">Convivencia</option>
+            <option value="FUNCIÓN">Función</option>
+            <option value="TRIDUO">Triduo</option>
+            <option value="BESAPIÉS">Besapiés</option>
+            <option value="REUNIÓN">Reunión</option>
+            <option value="PROCESIÓN">Procesión</option>
+            <option value="OTRO">Otro</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label for="ef-fecha">Fecha *</label>
+          <input id="ef-fecha" type="date" required>
+        </div>
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label for="ef-hora">Hora *</label>
+          <input id="ef-hora" type="time" required placeholder="20:00">
+        </div>
+        <div class="fg" style="flex:2">
+          <label for="ef-lugar">Lugar *</label>
+          <input id="ef-lugar" type="text" required
+                 placeholder="Ej: Parroquia San Juan de Dios, Medina Sidonia">
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <button type="button" class="btn-ghost" onclick="closeEventForm()">Cancelar</button>
+        <button type="submit" class="btn-gold">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar acto
+        </button>
+      </div>
+    </form>
+  </aside>
+
+
+  <!-- ══════════════════════════════════════
+       MODAL — CONFIRMAR ELIMINACIÓN DE EVENTO
+  ══════════════════════════════════════ -->
+  <div id="del-ev-modal" class="modal-overlay" hidden
+       onclick="if(event.target===this) hideModal('del-ev-modal')">
+    <div class="modal-box modal-box--sm">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-triangle-exclamation" style="color:#c0392b"></i>
+          Eliminar acto
+        </h3>
+        <button class="btn-close" onclick="hideModal('del-ev-modal')">✕</button>
+      </div>
+      <p class="modal-text">
+        ¿Seguro que quieres eliminar<br>
+        <strong id="del-ev-titulo-preview" style="color:var(--text)"></strong>?<br>
+        Esta acción no se puede deshacer.
+      </p>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="hideModal('del-ev-modal')">Cancelar</button>
+        <button class="btn-danger" onclick="executeDelEvento()">
+          <i class="fa-solid fa-trash"></i> Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════
+       MODAL — RESTAURAR ACTOS
+  ══════════════════════════════════════ -->
+  <div id="reset-ev-modal" class="modal-overlay" hidden
+       onclick="if(event.target===this) hideModal('reset-ev-modal')">
+    <div class="modal-box modal-box--sm">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-rotate-left" style="color:var(--gold)"></i>
+          Restaurar actos originales
+        </h3>
+        <button class="btn-close" onclick="hideModal('reset-ev-modal')">✕</button>
+      </div>
+      <p class="modal-text">
+        Se eliminarán todos los actos actuales y se restaurarán
+        los actos de ejemplo originales.<br><br>
+        ¿Continuar?
+      </p>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="hideModal('reset-ev-modal')">Cancelar</button>
+        <button class="btn-danger" onclick="executeResetEventos()">
+          <i class="fa-solid fa-rotate-left"></i> Sí, restaurar
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/agenda.js"></script>
   <script src="js/noticias.js"></script>
   <script src="js/admin.js"></script>
 </body>

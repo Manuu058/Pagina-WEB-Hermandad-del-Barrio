@@ -328,7 +328,39 @@ small { font-size: .74rem; color: var(--muted); margin-top: .3rem; display: bloc
 }
 
 /* ────────────────────────────────
-   LISTA DE NOTICIAS
+   TABS (Noticias / Agenda)
+──────────────────────────────── */
+.pm-tabs {
+  display: flex;
+  gap: .4rem;
+  margin-bottom: 1.8rem;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  padding-bottom: .1rem;
+}
+
+.pm-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: .55rem 1.1rem .65rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  transition: color .2s, border-color .2s;
+  margin-bottom: -1px;
+}
+.pm-tab:hover   { color: var(--text); }
+.pm-tab.active  { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* ────────────────────────────────
+   LISTA DE NOTICIAS / EVENTOS
 ──────────────────────────────── */
 .nl { display: flex; flex-direction: column; gap: .55rem; }
 

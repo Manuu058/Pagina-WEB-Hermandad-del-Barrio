@@ -133,50 +133,65 @@ initReveal();
 
 /* === PASO INTERACTIVO === */
 const hotspotsData = {
-  1:  { title: 'Canastilla',      text: 'Cuerpo principal del paso. Estructura de madera tallada y dorada que conforma el escenario procesional. En la Hermandad, destaca por sus frisos y cartelas de excelente factura artesanal.' },
-  2:  { title: 'Candelabros',     text: 'Los cuatro grandes ciriales de esquina y los candelabros menores conforman el techo de luz del paso. Realizados en plata o metal plateado, crean un halo luminoso sobre los titulares.' },
-  3:  { title: 'Exorno Floral',   text: 'Composición floral que viste la canastilla. En la salida extraordinaria del 50 Aniversario se sustituyó el monte habitual por una composición especial con frisos en la canastilla y flores de temporada.' },
-  4:  { title: 'Imagen Titular',  text: 'El Santísimo Cristo de la Reconciliación y Paz preside el paso de misterio. Imagen de gran devoción en el Barrio, con una iconografía de profunda expresión y serenidad.' },
-  5:  { title: 'Respiraderos',    text: 'Aberturas laterales del paso que permiten la ventilación de los portadores (costaleros). Los respiraderos de nuestra Hermandad presentan decoración en orfebrería de gran valor artístico.' },
-  6:  { title: 'Faldones',        text: 'Telas bordadas que cubren el lateral y frontal del paso. Elaborados en terciopelo con bordados en oro fino, son uno de los elementos más representativos del ajuar procesional.' },
-  7:  { title: 'Cartelas',        text: 'Medallones decorativos que adornan los laterales de la canastilla. Contienen escenas alegóricas relacionadas con la iconografía de los titulares y la historia de la Hermandad.' },
-  8:  { title: 'Llamador',        text: 'Pieza de orfebrería situada en la parte delantera inferior del paso. El capataz golpea el llamador para dar las señales de mando a los costaleros: levantad, parad, arranquemos.' },
-  9:  { title: 'Música',          text: 'La Hermandad procesiona acompañada de banda de música que interpreta marchas procesionales. El silencio también forma parte del rito cofrade en determinados momentos del itinerario.' },
+  1:  { num: '05', title: 'Canastilla',      text: 'Cuerpo principal del paso. Estructura de madera tallada y dorada que conforma el escenario procesional. En la Hermandad, destaca por sus frisos y cartelas de excelente factura artesanal.' },
+  2:  { num: '02', title: 'Candelabros',     text: 'Los cuatro grandes ciriales de esquina y los candelabros menores conforman el techo de luz del paso. Realizados en plata o metal plateado, crean un halo luminoso sobre los titulares.' },
+  3:  { num: '03', title: 'Exorno Floral',   text: 'Composición floral que viste la canastilla. En la salida extraordinaria del 50 Aniversario se sustituyó el monte habitual por una composición especial con frisos en la canastilla y flores de temporada.' },
+  4:  { num: '01', title: 'Imagen Titular',  text: 'El Santísimo Cristo de la Reconciliación y Paz preside el paso de misterio. Imagen de gran devoción en el Barrio, con una iconografía de profunda expresión y serenidad.' },
+  5:  { num: '06', title: 'Respiraderos',    text: 'Aberturas laterales del paso que permiten la ventilación de los portadores (costaleros). Los respiraderos de nuestra Hermandad presentan decoración en orfebrería de gran valor artístico.' },
+  6:  { num: '08', title: 'Faldones',        text: 'Telas bordadas que cubren el lateral y frontal del paso. Elaborados en terciopelo con bordados en oro fino, son uno de los elementos más representativos del ajuar procesional.' },
+  7:  { num: '04', title: 'Estatuas',        text: 'Figuras escultóricas que custodian el paso, dispuestas en las esquinas de la canastilla. Su presencia solemne enmarca la imagen del Santísimo Cristo y realza la majestuosidad del conjunto procesional.' },
+  8:  { num: '07', title: 'Llamador',        text: 'Pieza de orfebrería situada en la parte delantera inferior del paso. El capataz golpea el llamador para dar las señales de mando a los costaleros: levantad, parad, arranquemos.' },
+  9:  { num: '09', title: 'Banda',           text: 'El paso del Santísimo Cristo es acompañado musicalmente por la Banda del Nazareno de Utrera, cuyas marchas procesionales llenan de solemnidad y emoción cada momento del recorrido.' },
   10: { title: 'Cuadrilla',       text: 'Los costaleros son el alma del paso. Portadores que cargan la imagen bajo la canastilla, guiados únicamente por la voz y el llamador del capataz. Un trabajo de entrega y fe.' },
   11: { title: 'Capataz',         text: 'Figura fundamental que dirige la cuadrilla de costaleros. Con su caña y su voz, coordina cada movimiento del paso, desde el levantamiento hasta las paradas en los puntos más emotivos del recorrido.' },
+  17: { num: '07', title: 'Varales',    text: 'Los varales son las barras metálicas que sostienen el palio de la Virgen. Cada varal es una donación de distintas familias de la Hermandad, convirtiéndose en uno de los elementos más emotivos del paso, símbolo de la devoción y generosidad de sus hermanos.' },
+  12: { num: '02', title: 'Candelería', text: 'La candelería del paso de palio ilumina y enmarca a la Virgen durante la procesión. Compuesta por candelabros de diferente altura dispuestos en la peana, su luz cálida crea el ambiente de recogimiento y devoción que caracteriza el paso de Nuestra Señora.' },
+  13: { title: 'Techo de Palio',  text: 'El techo del palio es la parte superior bordada que cubre a la Virgen a modo de dosel. Realizado en terciopelo con bordados en hilo de oro, recoge motivos florales y religiosos de gran belleza. Es uno de los elementos de mayor valor artístico y devocional del ajuar de Nuestra Señora de los Dolores.' },
+  14: { title: 'Corona',          text: 'La corona de Nuestra Señora de los Dolores es una de las piezas de orfebrería más valiosas del ajuar de la Hermandad. Elaborada en metal dorado con pedrería, corona a la Virgen en sus salidas procesionales como símbolo de su reinado espiritual sobre el Barrio.' },
+  15: { title: 'Manto',           text: 'El manto procesional es la prenda bordada que cae desde los hombros de la Virgen hasta cubrir la peana del paso. Realizado en terciopelo con bordados en hilo de oro de gran finura, es uno de los elementos más suntuosos del ajuar de Nuestra Señora de los Dolores.' },
+  16: { title: 'Nuestra Señora',  text: 'Nuestra Señora de los Dolores preside el segundo paso de la Hermandad del Barrio. Imagen de vestir de gran belleza y profunda expresión dolorosa, es el centro de la devoción mariana de la Hermandad desde su fundación en 1975. Sale procesionalmente cada Miércoles Santo acompañada por la Banda Juan Aguilar de El Bosque.' },
 };
 
-const hotspots     = document.querySelectorAll('.hotspot');
-const pasoDefault  = document.querySelector('.paso-default');
-const pasoContents = document.querySelectorAll('.paso-content');
+const hotspots    = document.querySelectorAll('.hotspot');
+const pasoDefault = document.querySelector('.paso-default');
+let pasoTimer     = null;
 
 hotspots.forEach(hs => {
   hs.addEventListener('click', () => {
-    const id = parseInt(hs.dataset.id);
+    const id   = parseInt(hs.dataset.id);
     const data = hotspotsData[id];
     if (!data) return;
 
+    const wasActive = hs.classList.contains('active');
+
+    clearTimeout(pasoTimer);
     hotspots.forEach(h => h.classList.remove('active'));
-    hs.classList.add('active');
+    document.querySelectorAll('.paso-content').forEach(c => c.classList.remove('active'));
 
-    if (pasoDefault) pasoDefault.style.display = 'none';
-
-    pasoContents.forEach(c => c.classList.remove('active'));
-
-    let content = document.getElementById('pc-' + id);
-    if (!content) {
-      content = document.createElement('div');
-      content.className = 'paso-content';
-      content.id = 'pc-' + id;
-      content.innerHTML = `
-        <div class="pc-num">${String(id).padStart(2,'0')}</div>
-        <h3 class="pc-title">${data.title}</h3>
-        <div class="pc-rule"></div>
-        <p class="pc-text">${data.text}</p>
-      `;
-      document.querySelector('.paso-panel').appendChild(content);
+    if (wasActive) {
+      if (pasoDefault) pasoDefault.style.display = '';
+      return;
     }
-    content.classList.add('active');
+
+    pasoTimer = setTimeout(() => {
+      hs.classList.add('active');
+      if (pasoDefault) pasoDefault.style.display = 'none';
+
+      let content = document.getElementById('pc-' + id);
+      if (!content) {
+        content = document.createElement('div');
+        content.className = 'paso-content';
+        content.id = 'pc-' + id;
+        content.innerHTML = `
+          <div class="pc-num">${data.num || String(id).padStart(2,'0')}</div>
+          <h3 class="pc-title">${data.title}</h3>
+          <div class="pc-rule"></div>
+          <p class="pc-text">${data.text}</p>
+        `;
+        document.querySelector('.paso-panel').appendChild(content);
+      }
+      content.classList.add('active');
+    }, 200);
   });
 });
 
@@ -204,16 +219,7 @@ patFilters.forEach(btn => {
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-const agendaEvents = {
-  '2026-07-05': 'Culto - Santo Rosario',
-  '2026-07-12': 'Cabildo General',
-  '2026-07-19': 'Convivencia de Hermanos',
-  '2026-07-25': 'Función Principal de Gloria',
-  '2026-08-02': 'Triduo al Cristo',
-  '2026-08-10': 'Reunión de Junta',
-  '2026-09-15': 'Besapiés',
-  '2026-10-01': 'Iguala de costaleros',
-};
+const agendaEvents = (typeof getAgendaEventsMap === 'function') ? getAgendaEventsMap() : {};
 
 let calMonth = new Date().getMonth();
 let calYear  = new Date().getFullYear();

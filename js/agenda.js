@@ -90,7 +90,7 @@ function renderAgendaTimeline() {
           <h4 class="ev-title">${ev.titulo}</h4>
           <p class="ev-detail"><i class="fa-regular fa-clock"></i> ${ev.hora} h · ${ev.lugar}</p>
         </div>
-        <div class="ev-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        <div class="ev-arrow">›</div>
       </div>`;
   }).join('');
 

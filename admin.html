@@ -94,6 +94,11 @@
           </button>
         </div>
 
+        <div class="pm-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="noticias-search" placeholder="Buscar noticias…" oninput="renderList()" autocomplete="off">
+        </div>
+
         <div id="noticias-list" class="nl"></div>
 
         <div class="pm-actions">
@@ -126,9 +131,21 @@
           </button>
         </div>
 
+        <div class="pm-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="eventos-search" placeholder="Buscar actos…" oninput="renderEventosList()" autocomplete="off">
+        </div>
+
         <div id="eventos-list" class="nl"></div>
 
         <div class="pm-actions">
+          <button class="btn-ghost-sm" onclick="exportEventosJSON()">
+            <i class="fa-solid fa-file-export"></i> Exportar JSON
+          </button>
+          <button class="btn-ghost-sm" onclick="triggerImportEventos()">
+            <i class="fa-solid fa-file-import"></i> Importar JSON
+          </button>
+          <input type="file" id="import-ev-file" accept=".json" style="display:none" onchange="importEventosJSON(event)">
           <button class="btn-danger-sm" onclick="resetEventosDefault()">
             <i class="fa-solid fa-rotate-left"></i> Restaurar actos originales
           </button>
@@ -161,7 +178,10 @@
       </div>
 
       <div class="fg">
-        <label for="f-extracto">Extracto / Resumen *</label>
+        <label for="f-extracto">
+          Extracto / Resumen *
+          <span id="f-extracto-count" class="char-count">0 car.</span>
+        </label>
         <textarea id="f-extracto" required
                   placeholder="Breve descripción de la noticia (2–3 frases)"></textarea>
       </div>

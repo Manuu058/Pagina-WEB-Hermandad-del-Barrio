@@ -278,55 +278,123 @@ document.querySelector('.mc-next')?.addEventListener('click', () => {
 renderMiniCal();
 
 /* === VELA VIRTUAL === */
-let velasEncendidas = parseInt(localStorage.getItem('velas') || '0');
+const VELA_KEY  = 'hdb_vela_v2';
+const VELA_BASE = 1183;
 
-document.querySelectorAll('.vela-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    velasEncendidas++;
-    localStorage.setItem('velas', velasEncendidas);
-    btn.innerHTML = `<span class="vela-flame">🕯️</span> Vela encendida · ${velasEncendidas} velas`;
-    btn.classList.add('lit');
-    btn.disabled = true;
+function getVelaData() {
+  try { return JSON.parse(localStorage.getItem(VELA_KEY) || '{"lit":false,"delta":0}'); }
+  catch { return { lit: false, delta: 0 }; }
+}
+function saveVelaData(d) { localStorage.setItem(VELA_KEY, JSON.stringify(d)); }
+function fmtCount(n) { return n.toLocaleString('es-ES'); }
 
-    // Small particle burst
-    const rect = btn.getBoundingClientRect();
-    for (let i = 0; i < 6; i++) {
-      setTimeout(() => createSparkle(rect.left + rect.width/2, rect.top), i * 60);
-    }
-  });
-});
-
-function createSparkle(x, y) {
-  const el = document.createElement('div');
-  el.style.cssText = `
-    position: fixed;
-    left: ${x}px;
-    top: ${y}px;
-    width: 6px;
-    height: 6px;
-    background: #9B4DCC;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9999;
-    animation: sparkle .8s ease-out forwards;
-  `;
-  document.body.appendChild(el);
-  const angle = Math.random() * Math.PI * 2;
-  const dist  = Math.random() * 60 + 20;
-  el.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
-  el.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
-  setTimeout(() => el.remove(), 900);
+function buildWall(totalLit) {
+  const grid = document.getElementById('vm-wall-grid');
+  if (!grid) return;
+  const SLOTS = 30;
+  const lit   = totalLit > 0 ? Math.min(((totalLit - 1) % SLOTS) + 1, SLOTS) : 0;
+  grid.innerHTML = '';
+  for (let i = 0; i < SLOTS; i++) {
+    const c = document.createElement('div');
+    c.className = 'wc' + (i < lit ? ' lit' : '');
+    c.innerHTML = '<div class="wc-flame"><div class="wc-f-o"></div><div class="wc-f-i"></div></div>'
+                + '<div class="wc-wick"></div><div class="wc-body"></div>';
+    grid.appendChild(c);
+  }
 }
 
-/* Add sparkle animation */
-const sparkleStyle = document.createElement('style');
-sparkleStyle.textContent = `
-  @keyframes sparkle {
-    from { opacity: 1; transform: translate(0, 0) scale(1); }
-    to   { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+function spawnEmber(x, y) {
+  const el    = document.createElement('div');
+  const angle = Math.random() * Math.PI * 2;
+  const dist  = Math.random() * 55 + 15;
+  el.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:5px;height:5px;`
+    + `background:radial-gradient(circle,#ffdf80,#ff8c00);border-radius:50%;`
+    + `pointer-events:none;z-index:9999;`
+    + `--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px;`
+    + `animation:ember .9s ease-out forwards;`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 950);
+}
+
+const emberStyle = document.createElement('style');
+emberStyle.textContent = `
+  @keyframes ember {
+    from { opacity:1; transform:translate(0,0) scale(1); }
+    to   { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0); }
   }
 `;
-document.head.appendChild(sparkleStyle);
+document.head.appendChild(emberStyle);
+
+const velaOverlay  = document.getElementById('vela-modal');
+const velaOpenBtn  = document.getElementById('vela-open-btn');
+const velaCloseBtn = document.getElementById('vela-close-btn');
+const vmCandle     = document.getElementById('vm-candle');
+const vmGlow       = document.getElementById('vm-glow');
+const vmCount      = document.getElementById('vm-count');
+const vmBtn        = document.getElementById('vm-btn');
+const vmLitMsg     = document.getElementById('vm-lit-msg');
+const vmHint       = document.getElementById('vm-click-hint');
+
+function refreshVelaModal() {
+  const data  = getVelaData();
+  const total = VELA_BASE + data.delta;
+  if (vmCount)  vmCount.textContent = fmtCount(total);
+  buildWall(total);
+  if (data.lit) {
+    vmCandle?.classList.remove('unlit'); vmCandle?.classList.add('lit');
+    vmGlow?.classList.add('active');
+    if (vmBtn)    vmBtn.style.display    = 'none';
+    if (vmLitMsg) vmLitMsg.style.display = 'block';
+    if (vmHint)   vmHint.classList.add('hidden');
+  } else {
+    vmCandle?.classList.add('unlit'); vmCandle?.classList.remove('lit');
+    vmGlow?.classList.remove('active');
+    if (vmBtn)    vmBtn.style.display    = '';
+    if (vmLitMsg) vmLitMsg.style.display = 'none';
+    if (vmHint)   vmHint.classList.remove('hidden');
+  }
+}
+
+function openVelaModal() {
+  refreshVelaModal();
+  velaOverlay?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeVelaModal() {
+  velaOverlay?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+velaOpenBtn?.addEventListener('click', openVelaModal);
+velaCloseBtn?.addEventListener('click', closeVelaModal);
+velaOverlay?.addEventListener('click', e => { if (e.target === velaOverlay) closeVelaModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && velaOverlay?.classList.contains('open')) closeVelaModal(); });
+
+vmBtn?.addEventListener('click', () => {
+  const data = getVelaData();
+  if (data.lit) return;
+  data.lit    = true;
+  data.delta += 1;
+  saveVelaData(data);
+
+  vmCandle?.classList.remove('unlit'); vmCandle?.classList.add('lit');
+  vmGlow?.classList.add('active');
+  if (vmBtn)    vmBtn.style.display    = 'none';
+  if (vmLitMsg) vmLitMsg.style.display = 'block';
+  if (vmHint)   vmHint.classList.add('hidden');
+
+  setTimeout(() => {
+    const total = VELA_BASE + data.delta;
+    if (vmCount) vmCount.textContent = fmtCount(total);
+    buildWall(total);
+  }, 500);
+
+  const rect = vmCandle?.getBoundingClientRect();
+  if (rect) {
+    for (let i = 0; i < 8; i++)
+      setTimeout(() => spawnEmber(rect.left + rect.width / 2, rect.top + 10), i * 90);
+  }
+});
 
 /* === MODAL === */
 function openModal(id) {

@@ -195,31 +195,11 @@ hotspots.forEach(hs => {
   });
 });
 
-/* === PATRIMONIO FILTERS === */
-const patFilters = document.querySelectorAll('.pat-filter');
-const enserCards = document.querySelectorAll('.enser-card');
-
-patFilters.forEach(btn => {
-  btn.addEventListener('click', () => {
-    patFilters.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    const filter = btn.dataset.filter;
-    enserCards.forEach(card => {
-      const show = filter === 'all' || card.dataset.cat === filter;
-      card.style.display = show ? 'block' : 'none';
-      if (show) {
-        card.style.animation = 'fadeIn .35s ease';
-      }
-    });
-  });
-});
-
 /* === MINI CALENDAR === */
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-const agendaEvents = (typeof getAgendaEventsMap === 'function') ? getAgendaEventsMap() : {};
+let agendaEvents = (typeof getAgendaEventsMap === 'function') ? getAgendaEventsMap() : {};
 
 let calMonth = new Date().getMonth();
 let calYear  = new Date().getFullYear();
@@ -277,16 +257,49 @@ document.querySelector('.mc-next')?.addEventListener('click', () => {
 
 renderMiniCal();
 
-/* === VELA VIRTUAL === */
-const VELA_KEY  = 'hdb_vela_v2';
-const VELA_BASE = 1183;
-
-function getVelaData() {
-  try { return JSON.parse(localStorage.getItem(VELA_KEY) || '{"lit":false,"delta":0}'); }
-  catch { return { lit: false, delta: 0 }; }
+/* Reconstruye el mapa y vuelve a pintar cuando cambien los actos en Firestore */
+if (typeof onEventosChange === 'function') {
+  onEventosChange(() => {
+    agendaEvents = getAgendaEventsMap();
+    renderMiniCal();
+  });
 }
-function saveVelaData(d) { localStorage.setItem(VELA_KEY, JSON.stringify(d)); }
+
+/* === VELA VIRTUAL === */
+
+/* El flag "ya encendí mi vela" se guarda en localStorage (correcto:
+   es por dispositivo, evita que el mismo navegador sume varias veces) */
+const VELA_KEY = 'hdb_vela_v2';
+
+function getVelaLit() {
+  try { return JSON.parse(localStorage.getItem(VELA_KEY) || '{"lit":false}').lit === true; }
+  catch { return false; }
+}
+function setVelaLit() {
+  localStorage.setItem(VELA_KEY, JSON.stringify({ lit: true }));
+}
+
 function fmtCount(n) { return n.toLocaleString('es-ES'); }
+
+/* Aplica la config (frase, subtítulo, enabled) desde Firestore */
+function _applyVelaConfig(cfg) {
+  const velaBarEl = document.querySelector('.vela-bar');
+  if (!cfg.enabled) {
+    velaBarEl?.remove();
+    document.getElementById('vela-modal')?.remove();
+    return;
+  }
+  const velaTextEl = document.querySelector('.vela-text');
+  if (velaTextEl && cfg.frase) velaTextEl.textContent = cfg.frase;
+  const vmSubEl = document.querySelector('.vm-sub');
+  if (vmSubEl && cfg.subtitulo) {
+    vmSubEl.innerHTML = cfg.subtitulo.split('\n').map(s => s.trim()).filter(Boolean).join('<br>');
+  }
+}
+
+/* Inicializa con el valor del cache (DEFAULT en principio, Firestore en cuanto llega) */
+_applyVelaConfig(getVelaConfig());
+onVelaConfigChange(() => _applyVelaConfig(getVelaConfig()));
 
 function buildWall(totalLit) {
   const grid = document.getElementById('vm-wall-grid');
@@ -335,12 +348,21 @@ const vmBtn        = document.getElementById('vm-btn');
 const vmLitMsg     = document.getElementById('vm-lit-msg');
 const vmHint       = document.getElementById('vm-click-hint');
 
-function refreshVelaModal() {
-  const data  = getVelaData();
-  const total = VELA_BASE + data.delta;
-  if (vmCount)  vmCount.textContent = fmtCount(total);
+function _updateVelaCountDisplay(delta) {
+  const total = (getVelaConfig().base || 0) + delta;
+  if (vmCount) vmCount.textContent = fmtCount(total);
   buildWall(total);
-  if (data.lit) {
+}
+
+/* Callback invocado por velas.js cuando el contador cambia en Firestore */
+function _onVelaCounterUpdate(delta) {
+  if (velaOverlay?.classList.contains('open')) _updateVelaCountDisplay(delta);
+}
+
+function refreshVelaModal() {
+  _updateVelaCountDisplay(getVelaCounterDelta());
+  const lit = getVelaLit();
+  if (lit) {
     vmCandle?.classList.remove('unlit'); vmCandle?.classList.add('lit');
     vmGlow?.classList.add('active');
     if (vmBtn)    vmBtn.style.display    = 'none';
@@ -370,12 +392,9 @@ velaCloseBtn?.addEventListener('click', closeVelaModal);
 velaOverlay?.addEventListener('click', e => { if (e.target === velaOverlay) closeVelaModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && velaOverlay?.classList.contains('open')) closeVelaModal(); });
 
-vmBtn?.addEventListener('click', () => {
-  const data = getVelaData();
-  if (data.lit) return;
-  data.lit    = true;
-  data.delta += 1;
-  saveVelaData(data);
+vmBtn?.addEventListener('click', async () => {
+  if (getVelaLit()) return;
+  setVelaLit();
 
   vmCandle?.classList.remove('unlit'); vmCandle?.classList.add('lit');
   vmGlow?.classList.add('active');
@@ -383,16 +402,18 @@ vmBtn?.addEventListener('click', () => {
   if (vmLitMsg) vmLitMsg.style.display = 'block';
   if (vmHint)   vmHint.classList.add('hidden');
 
-  setTimeout(() => {
-    const total = VELA_BASE + data.delta;
-    if (vmCount) vmCount.textContent = fmtCount(total);
-    buildWall(total);
-  }, 500);
-
   const rect = vmCandle?.getBoundingClientRect();
   if (rect) {
     for (let i = 0; i < 8; i++)
       setTimeout(() => spawnEmber(rect.left + rect.width / 2, rect.top + 10), i * 90);
+  }
+
+  /* Incremento atómico en Firestore — el onSnapshot de velas.js
+     actualizará el contador en pantalla para todos los visitantes */
+  try {
+    await incrementVelaCounter();
+  } catch (err) {
+    console.error('No se pudo registrar la vela en Firestore', err);
   }
 });
 
@@ -423,20 +444,54 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 window.openModal  = openModal;
 window.closeModal = closeModal;
 
-/* === FORM SUBMISSION (demo) === */
+/* === HERMANO INFO DROPDOWN === */
+function toggleHermInfo() {
+  const btn   = document.getElementById('herm-info-toggle');
+  const panel = document.getElementById('herm-info-panel');
+  if (!btn || !panel) return;
+
+  const isOpen = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', isOpen);
+  panel.setAttribute('aria-hidden', !isOpen);
+
+  if (isOpen) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+window.toggleHermInfo = toggleHermInfo;
+
+/* === FORMULARIO "HAZTE HERMANO" — envío real con EmailJS === */
 document.querySelectorAll('form.js-form').forEach(form => {
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     const btn = form.querySelector('[type=submit]');
-    btn.textContent = '¡Enviado! Gracias.';
-    btn.disabled = true;
-    btn.style.background = 'rgba(155,77,204,.2)';
-    setTimeout(() => {
-      btn.textContent = 'Enviar';
-      btn.disabled = false;
-      btn.style.background = '';
-      form.reset();
-    }, 3500);
+    const original = btn.innerHTML;
+    btn.disabled  = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando…';
+
+    /* Si EmailJS no está configurado todavía, simula el envío con aviso */
+    if (typeof emailjs === 'undefined' || EMAILJS_PUBLIC_KEY === 'TU_PUBLIC_KEY') {
+      console.warn('EmailJS no configurado: configura js/emailjs-config.js para activar el envío real.');
+      btn.innerHTML = '¡Formulario recibido! (config pendiente)';
+      setTimeout(() => { btn.innerHTML = original; btn.disabled = false; form.reset(); }, 3500);
+      return;
+    }
+
+    try {
+      await emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, form);
+      btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ¡Solicitud enviada! Nos pondremos en contacto.';
+      setTimeout(() => { btn.innerHTML = original; btn.disabled = false; form.reset(); }, 4000);
+    } catch (err) {
+      console.error('Error al enviar el formulario:', err);
+      btn.innerHTML = original;
+      btn.disabled  = false;
+      /* Muestra error usando el sistema de toast si está disponible */
+      const toastEl = document.createElement('div');
+      toastEl.className = 'toast toast--error';
+      toastEl.textContent = 'Error al enviar el formulario. Inténtalo de nuevo o contacta por teléfono.';
+      document.body.appendChild(toastEl);
+      requestAnimationFrame(() => toastEl.classList.add('toast--in'));
+      setTimeout(() => { toastEl.classList.remove('toast--in'); setTimeout(() => toastEl.remove(), 400); }, 4000);
+    }
   });
 });
 

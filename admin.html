@@ -8,7 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="css/admin.css">
+
+  <!-- Firebase (backend: Firestore + Storage + Auth) -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>
 </head>
 <body>
 
@@ -22,16 +29,25 @@
       <p class="login-sub">Hermandad del Barrio · Medina Sidonia</p>
 
       <div class="login-field">
-        <label for="pin-input">Contraseña de acceso</label>
-        <input id="pin-input" type="password" placeholder="••••••" autocomplete="current-password">
-        <p id="login-err" class="login-err" hidden>Contraseña incorrecta. Inténtalo de nuevo.</p>
+        <label for="login-email">Correo electrónico</label>
+        <input id="login-email" type="email" placeholder="tucorreo@hermandad.es" autocomplete="username">
       </div>
 
-      <button class="btn-gold" onclick="checkPin()">
+      <div class="login-field">
+        <label for="login-password">Contraseña</label>
+        <input id="login-password" type="password" placeholder="••••••" autocomplete="current-password">
+        <p id="login-err" class="login-err" hidden>Correo o contraseña incorrectos. Inténtalo de nuevo.</p>
+      </div>
+
+      <button class="btn-gold" onclick="login()">
         <i class="fa-solid fa-unlock-keyhole"></i> Acceder al panel
       </button>
 
-      <p class="login-hint">Contraseña inicial: <code>1975</code></p>
+      <button type="button" class="login-forgot" onclick="forgotPassword()">
+        ¿Olvidaste tu contraseña?
+      </button>
+
+      <p class="login-hint">Los usuarios de la Junta se crean en la consola de Firebase (Authentication).</p>
     </div>
   </div>
 
@@ -76,6 +92,15 @@
         </button>
         <button class="pm-tab" id="tab-agenda" onclick="switchTab('agenda')">
           <i class="fa-regular fa-calendar-days"></i> Agenda
+        </button>
+        <button class="pm-tab" id="tab-velas" onclick="switchTab('velas')">
+          <i class="fa-solid fa-fire"></i> Vela Virtual
+        </button>
+        <button class="pm-tab" id="tab-patrimonio" onclick="switchTab('patrimonio')">
+          <i class="fa-solid fa-gem"></i> Patrimonio
+        </button>
+        <button class="pm-tab" id="tab-recorrido" onclick="switchTab('recorrido')">
+          <i class="fa-solid fa-route"></i> Recorrido
         </button>
       </div>
 
@@ -152,6 +177,152 @@
         </div>
 
       </div><!-- /section-agenda -->
+
+      <!-- ── SECCIÓN VELA VIRTUAL ── -->
+      <div id="section-velas" style="display:none">
+
+        <div class="pm-toolbar">
+          <div>
+            <h2 class="pm-heading">
+              <i class="fa-solid fa-fire"></i> Vela Virtual
+            </h2>
+            <p class="pm-count">Controla la barra de "Encender una vela" que ven los visitantes en la web</p>
+          </div>
+        </div>
+
+        <form id="velas-form" class="drawer-form" style="padding:0" onsubmit="saveVelasConfigForm(event)">
+
+          <div class="fg">
+            <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer">
+              <input type="checkbox" id="vc-enabled" style="width:auto">
+              Mostrar la vela virtual en la web
+            </label>
+          </div>
+
+          <div class="fg">
+            <label for="vc-frase">Frase de la barra</label>
+            <input id="vc-frase" type="text" maxlength="120"
+                   placeholder='"Enciende una vela virtual por los Titulares del Barrio"'>
+          </div>
+
+          <div class="fg">
+            <label for="vc-subtitulo">Dedicatoria (se muestra al abrir la vela)</label>
+            <textarea id="vc-subtitulo" maxlength="200"
+                      placeholder="Por el Santísimo Cristo de la Reconciliación y Paz&#10;y Nuestra Señora de los Dolores"></textarea>
+          </div>
+
+          <div class="fg">
+            <label for="vc-base">Número de velas encendidas (contador inicial)</label>
+            <input id="vc-base" type="number" min="0" step="1" placeholder="1183">
+          </div>
+
+          <div class="pm-actions" style="margin-top:.4rem;padding-top:1.2rem">
+            <button type="submit" class="btn-gold">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
+            </button>
+            <button type="button" class="btn-danger-sm" onclick="resetVelasConfigDefault()">
+              <i class="fa-solid fa-rotate-left"></i> Restaurar valores originales
+            </button>
+          </div>
+
+        </form>
+
+      </div><!-- /section-velas -->
+
+      <!-- ── SECCIÓN PATRIMONIO ── -->
+      <div id="section-patrimonio" style="display:none">
+
+        <div class="pm-toolbar">
+          <div>
+            <h2 class="pm-heading">
+              <i class="fa-solid fa-gem"></i> Enseres y Patrimonio
+            </h2>
+            <p class="pm-count" id="patrimonio-count"></p>
+          </div>
+          <button class="btn-gold" onclick="openPatForm()">
+            <i class="fa-solid fa-plus"></i> Nueva pieza
+          </button>
+        </div>
+
+        <div class="pm-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="patrimonio-search" placeholder="Buscar piezas…" oninput="renderPatrimonioList()" autocomplete="off">
+        </div>
+
+        <div id="patrimonio-list" class="nl"></div>
+
+        <div class="pm-actions">
+          <button class="btn-ghost-sm" onclick="exportPatJSON()">
+            <i class="fa-solid fa-file-export"></i> Exportar JSON
+          </button>
+          <button class="btn-ghost-sm" onclick="triggerImportPat()">
+            <i class="fa-solid fa-file-import"></i> Importar JSON
+          </button>
+          <input type="file" id="import-pat-file" accept=".json" style="display:none" onchange="importPatJSON(event)">
+          <button class="btn-danger-sm" onclick="resetPatDefault()">
+            <i class="fa-solid fa-rotate-left"></i> Restaurar datos originales
+          </button>
+        </div>
+
+      </div><!-- /section-patrimonio -->
+
+      <!-- ── SECCIÓN RECORRIDO ── -->
+      <div id="section-recorrido" style="display:none">
+
+        <div class="pm-toolbar">
+          <div>
+            <h2 class="pm-heading">
+              <i class="fa-solid fa-route"></i> Recorrido Procesional
+            </h2>
+            <p class="pm-count">Edita el itinerario, los puntos de paso, las bandas y el mapa. Cambia cada año.</p>
+          </div>
+        </div>
+
+        <form id="recorrido-form" class="drawer-form" style="padding:0" onsubmit="saveRecorridoForm(event)">
+
+          <div class="fg">
+            <label for="rf-dia">Día / etiqueta del cortejo *</label>
+            <input id="rf-dia" type="text" required placeholder="Ej: Miércoles Santo">
+          </div>
+
+          <div class="fg">
+            <label for="rf-itinerario">Itinerario (calles) *</label>
+            <textarea id="rf-itinerario" required placeholder="Calle 1 · Calle 2 · Calle 3…"></textarea>
+            <small>Separa las calles con " · "</small>
+          </div>
+
+          <div class="fg">
+            <label>Bandas que acompañan <span class="lbl-opt">(opcional)</span></label>
+            <div id="rec-bandas-list" class="rec-rows"></div>
+            <button type="button" class="btn-ghost-sm" onclick="addBandaRow()">
+              <i class="fa-solid fa-plus"></i> Añadir banda
+            </button>
+          </div>
+
+          <div class="fg">
+            <label>Puntos del recorrido *</label>
+            <small id="rec-mini-map-hint">Arrastra los marcadores para ajustar su posición, o pulsa "Elegir en el mapa" en un punto y haz clic donde quieras situarlo.</small>
+            <div class="rec-mini-map-wrap">
+              <div id="rec-mini-map" class="rec-mini-map"></div>
+            </div>
+            <div id="rec-puntos-list" class="rec-puntos-list"></div>
+            <button type="button" class="btn-ghost-sm" onclick="addPuntoRow()">
+              <i class="fa-solid fa-plus"></i> Añadir punto
+            </button>
+          </div>
+
+          <div class="pm-actions" style="margin-top:.4rem;padding-top:1.2rem">
+            <button type="submit" class="btn-gold">
+              <i class="fa-solid fa-floppy-disk"></i> Guardar recorrido
+            </button>
+            <button type="button" class="btn-danger-sm" onclick="resetRecorridoDefault()">
+              <i class="fa-solid fa-rotate-left"></i> Restaurar datos originales
+            </button>
+          </div>
+
+        </form>
+
+      </div><!-- /section-recorrido -->
 
     </main>
   </div><!-- /panel -->
@@ -488,8 +659,192 @@
   </div>
 
 
+  <!-- ══════════════════════════════════════
+       DRAWER — FORMULARIO DE PIEZA DE PATRIMONIO
+  ══════════════════════════════════════ -->
+  <div id="pat-drawer-overlay" class="drawer-overlay" hidden onclick="closePatForm()"></div>
+
+  <aside id="pat-drawer" class="drawer" hidden>
+    <div class="drawer-header">
+      <h2 id="pat-drawer-title">Nueva Pieza</h2>
+      <button class="btn-close" onclick="closePatForm()" title="Cerrar">✕</button>
+    </div>
+
+    <form id="patrimonio-form" class="drawer-form" onsubmit="savePatrimonioItem(event)">
+      <input type="hidden" id="pf-id">
+
+      <div class="fg">
+        <label for="pf-nombre">Nombre de la pieza *</label>
+        <input id="pf-nombre" type="text" required
+               placeholder="Ej: Cruz de Guía">
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label for="pf-categoria">Categoría *</label>
+          <select id="pf-categoria" required>
+            <option value="orf">Orfebrería</option>
+            <option value="bor">Bordados</option>
+            <option value="ins">Insignias</option>
+            <option value="aju">Ajuar Virgen</option>
+            <option value="doc">Documentos</option>
+            <option value="fot">Fotografías</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label for="pf-icono">Icono (emoji)</label>
+          <input id="pf-icono" type="text" maxlength="4"
+                 placeholder="⚜️">
+        </div>
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label for="pf-material">Material / detalle</label>
+          <input id="pf-material" type="text"
+                 placeholder="Ej: Plata, Terciopelo y oro…">
+        </div>
+        <div class="fg">
+          <label for="pf-anio">Año</label>
+          <input id="pf-anio" type="text" maxlength="12"
+                 placeholder="Ej: 2003 o c.1980">
+        </div>
+      </div>
+
+      <div class="fg">
+        <label for="pf-historia">Historia <span class="lbl-opt">(se muestra al hacer clic en la pieza)</span></label>
+        <textarea id="pf-historia" rows="6"
+                  placeholder="Cuenta el origen, autoría, donantes o anécdotas de esta pieza…"></textarea>
+      </div>
+
+      <!-- ── FOTO ── -->
+      <div class="fg">
+        <label>Foto de la pieza <span class="lbl-opt">(opcional · si no hay foto se muestra el icono)</span></label>
+        <div class="img-drop" id="pat-main-drop"
+             onclick="document.getElementById('pat-main-file').click()"
+             ondragover="event.preventDefault()"
+             ondrop="handlePatMainDrop(event)">
+          <div id="pat-main-empty" class="img-drop-empty">
+            <i class="fa-solid fa-image"></i>
+            <p>Haz clic o arrastra una foto</p>
+            <small>JPG, PNG o WebP · Se comprime automáticamente</small>
+          </div>
+          <img id="pat-main-preview" class="img-preview-full" style="display:none" alt="Vista previa">
+        </div>
+        <input type="file" id="pat-main-file" accept="image/*" style="display:none"
+               onchange="handlePatMainFile(event)">
+        <div id="pat-main-actions" class="img-actions" style="display:none">
+          <button type="button" id="pat-main-upload-btn" class="btn-ghost-sm"
+                  onclick="document.getElementById('pat-main-file').click()">
+            <i class="fa-solid fa-arrows-rotate"></i> Cambiar foto
+          </button>
+          <button type="button" class="btn-danger-sm" onclick="removePatMainImg()">
+            <i class="fa-solid fa-trash"></i> Quitar foto
+          </button>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <button type="button" class="btn-ghost" onclick="closePatForm()">Cancelar</button>
+        <button type="submit" class="btn-gold">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar pieza
+        </button>
+      </div>
+    </form>
+  </aside>
+
+
+  <!-- ══════════════════════════════════════
+       MODAL — CONFIRMAR ELIMINACIÓN DE PIEZA
+  ══════════════════════════════════════ -->
+  <div id="del-pat-modal" class="modal-overlay" hidden
+       onclick="if(event.target===this) hideModal('del-pat-modal')">
+    <div class="modal-box modal-box--sm">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-triangle-exclamation" style="color:#c0392b"></i>
+          Eliminar pieza
+        </h3>
+        <button class="btn-close" onclick="hideModal('del-pat-modal')">✕</button>
+      </div>
+      <p class="modal-text">
+        ¿Seguro que quieres eliminar<br>
+        <strong id="del-pat-titulo-preview" style="color:var(--text)"></strong>?<br>
+        Esta acción no se puede deshacer.
+      </p>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="hideModal('del-pat-modal')">Cancelar</button>
+        <button class="btn-danger" onclick="executeDelPat()">
+          <i class="fa-solid fa-trash"></i> Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════
+       MODAL — RESTAURAR PATRIMONIO
+  ══════════════════════════════════════ -->
+  <div id="reset-pat-modal" class="modal-overlay" hidden
+       onclick="if(event.target===this) hideModal('reset-pat-modal')">
+    <div class="modal-box modal-box--sm">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-rotate-left" style="color:var(--gold)"></i>
+          Restaurar datos originales
+        </h3>
+        <button class="btn-close" onclick="hideModal('reset-pat-modal')">✕</button>
+      </div>
+      <p class="modal-text">
+        Se eliminarán todas las piezas actuales y se restaurará
+        el catálogo de ejemplo original.<br><br>
+        ¿Continuar?
+      </p>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="hideModal('reset-pat-modal')">Cancelar</button>
+        <button class="btn-danger" onclick="executeResetPat()">
+          <i class="fa-solid fa-rotate-left"></i> Sí, restaurar
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════
+       MODAL — RESTAURAR RECORRIDO
+  ══════════════════════════════════════ -->
+  <div id="reset-rec-modal" class="modal-overlay" hidden
+       onclick="if(event.target===this) hideModal('reset-rec-modal')">
+    <div class="modal-box modal-box--sm">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-rotate-left" style="color:var(--gold)"></i>
+          Restaurar recorrido original
+        </h3>
+        <button class="btn-close" onclick="hideModal('reset-rec-modal')">✕</button>
+      </div>
+      <p class="modal-text">
+        Se eliminarán el itinerario, los puntos, las bandas y el mapa personalizados,
+        y se restaurará el recorrido de ejemplo original.<br><br>
+        ¿Continuar?
+      </p>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="hideModal('reset-rec-modal')">Cancelar</button>
+        <button class="btn-danger" onclick="executeResetRecorrido()">
+          <i class="fa-solid fa-rotate-left"></i> Sí, restaurar
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/firebase-config.js"></script>
   <script src="js/agenda.js"></script>
   <script src="js/noticias.js"></script>
+  <script src="js/velas.js"></script>
+  <script src="js/patrimonio.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/recorrido.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

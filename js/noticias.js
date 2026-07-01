@@ -74,64 +74,97 @@ const NOTICIAS_DEFAULT = [
   },
 ];
 
+/* ── DATOS (Firestore, con caché local en tiempo real) ──
+   getNoticias() sigue siendo síncrona: devuelve la caché poblada
+   por el listener onSnapshot de más abajo. Así el resto del código
+   (admin.js, render público) no necesita volverse asíncrono. */
+
+let _noticiasCache   = [...NOTICIAS_DEFAULT];
+let _noticiasReady   = false;
+let _noticiasSeeding = false;
+const _noticiasSubs  = [];
+
 function getNoticias() {
-  try {
-    const raw = localStorage.getItem(NOTICIAS_KEY);
-    if (!raw) return [...NOTICIAS_DEFAULT];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [...NOTICIAS_DEFAULT];
-  } catch (_) {
-    return [...NOTICIAS_DEFAULT];
+  return _noticiasCache;
+}
+
+function onNoticiasChange(cb) {
+  _noticiasSubs.push(cb);
+  if (_noticiasReady) cb();
+}
+
+db.collection('noticias').onSnapshot(async snap => {
+  if (snap.empty && !_noticiasReady && !_noticiasSeeding) {
+    _noticiasSeeding = true;
+    const batch = db.batch();
+    NOTICIAS_DEFAULT.forEach(n => batch.set(db.collection('noticias').doc(n.id), n));
+    try { await batch.commit(); } catch (err) { console.error('No se pudieron sembrar las noticias por defecto', err); }
+    _noticiasSeeding = false;
+    return; /* el commit disparará un nuevo snapshot ya con los datos */
   }
+  _noticiasCache = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  _noticiasReady = true;
+  _noticiasSubs.forEach(cb => cb());
+}, err => console.error('Error escuchando noticias', err));
+
+function setNoticiaDoc(id, data) {
+  return db.collection('noticias').doc(id).set(data);
 }
 
-function saveNoticias(noticias) {
-  localStorage.setItem(NOTICIAS_KEY, JSON.stringify(noticias));
+function deleteNoticiaDoc(id) {
+  return db.collection('noticias').doc(id).delete();
 }
 
-/* ── IMÁGENES (IndexedDB) ── */
+/* Reemplaza toda la colección (usado por Importar JSON / Restaurar valores originales) */
+async function replaceAllNoticias(array) {
+  const col  = db.collection('noticias');
+  const snap = await col.get();
+  const batch  = db.batch();
+  const newIds = new Set(array.map(n => n.id));
+  snap.forEach(doc => { if (!newIds.has(doc.id)) batch.delete(doc.ref); });
+  array.forEach(n => batch.set(col.doc(n.id), n));
+  await batch.commit();
+}
 
-const IMG_DB_NAME  = 'hermandad_imagenes';
-const IMG_DB_STORE = 'imagenes';
+/* ── IMÁGENES (Firebase Storage) ──
+   Misma clave determinista que antes (`${id}_main`, `${id}_sec_${i}`),
+   compartida globalmente con patrimonio.js y admin.js sin cambios. */
 
-function openImgDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IMG_DB_NAME, 1);
-    req.onupgradeneeded = e => {
-      e.target.result.createObjectStore(IMG_DB_STORE, { keyPath: 'key' });
-    };
-    req.onsuccess = e => resolve(e.target.result);
-    req.onerror   = e => reject(e.target.error);
-  });
+const _imgUrlCache = new Map();
+
+function _imgRef(key) {
+  return storage.ref('imagenes/' + key + '.jpg');
 }
 
 async function saveImage(key, dataUrl) {
-  const db = await openImgDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(IMG_DB_STORE, 'readwrite');
-    tx.objectStore(IMG_DB_STORE).put({ key, dataUrl });
-    tx.oncomplete = resolve;
-    tx.onerror    = () => reject(tx.error);
-  });
+  const blob = await (await fetch(dataUrl)).blob();
+  await _imgRef(key).put(blob, { contentType: 'image/jpeg' });
+  _imgUrlCache.delete(key);
 }
 
 async function getImage(key) {
-  const db = await openImgDB();
-  return new Promise((resolve, reject) => {
-    const req = db.transaction(IMG_DB_STORE).objectStore(IMG_DB_STORE).get(key);
-    req.onsuccess = e => resolve(e.target.result?.dataUrl ?? null);
-    req.onerror   = e => reject(e.target.error);
-  });
+  if (_imgUrlCache.has(key)) return _imgUrlCache.get(key);
+  try {
+    const url = await _imgRef(key).getDownloadURL();
+    _imgUrlCache.set(key, url);
+    return url;
+  } catch (err) {
+    if (err && err.code === 'storage/object-not-found') {
+      _imgUrlCache.set(key, null);
+      return null;
+    }
+    throw err;
+  }
 }
 
 async function deleteImage(key) {
-  const db = await openImgDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(IMG_DB_STORE, 'readwrite');
-    tx.objectStore(IMG_DB_STORE).delete(key);
-    tx.oncomplete = resolve;
-    tx.onerror    = () => reject(tx.error);
-  });
+  _imgUrlCache.delete(key);
+  try {
+    await _imgRef(key).delete();
+  } catch (err) {
+    if (err && err.code === 'storage/object-not-found') return;
+    throw err;
+  }
 }
 
 async function deleteAllNoticiaImages(n) {
@@ -422,6 +455,7 @@ function setupNoticiasClick(container, noticias) {
   });
 }
 
-/* Auto-render en la página principal */
+/* Auto-render en la página principal — se vuelve a ejecutar solo
+   cada vez que cambian las noticias en Firestore (tiempo real) */
 const _grid = document.getElementById('noticias-grid');
-if (_grid) renderNoticiasGrid(getNoticias(), _grid);
+if (_grid) onNoticiasChange(() => renderNoticiasGrid(getNoticias(), _grid));

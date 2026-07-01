@@ -30,19 +30,52 @@ const EVENTOS_DEFAULT = [
   { id: 'ev006', titulo: 'Besapiés a Nuestra Señora de los Dolores', tipo: 'BESAPIÉS', hora: '18:30', lugar: 'Parroquia San Juan de Dios, Medina Sidonia', fechaISO: '2026-09-15' },
 ];
 
+/* ── DATOS (Firestore, con caché local en tiempo real) ── */
+
+let _eventosCache   = [...EVENTOS_DEFAULT];
+let _eventosReady   = false;
+let _eventosSeeding = false;
+const _eventosSubs  = [];
+
 function getEventos() {
-  try {
-    const raw = localStorage.getItem(EVENTOS_KEY);
-    if (!raw) return [...EVENTOS_DEFAULT];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [...EVENTOS_DEFAULT];
-  } catch (_) {
-    return [...EVENTOS_DEFAULT];
-  }
+  return _eventosCache;
 }
 
-function saveEventos(eventos) {
-  localStorage.setItem(EVENTOS_KEY, JSON.stringify(eventos));
+function onEventosChange(cb) {
+  _eventosSubs.push(cb);
+  if (_eventosReady) cb();
+}
+
+db.collection('eventos').onSnapshot(async snap => {
+  if (snap.empty && !_eventosReady && !_eventosSeeding) {
+    _eventosSeeding = true;
+    const batch = db.batch();
+    EVENTOS_DEFAULT.forEach(ev => batch.set(db.collection('eventos').doc(ev.id), ev));
+    try { await batch.commit(); } catch (err) { console.error('No se pudieron sembrar los actos por defecto', err); }
+    _eventosSeeding = false;
+    return;
+  }
+  _eventosCache = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  _eventosReady = true;
+  _eventosSubs.forEach(cb => cb());
+}, err => console.error('Error escuchando eventos', err));
+
+function setEventoDoc(id, data) {
+  return db.collection('eventos').doc(id).set(data);
+}
+
+function deleteEventoDoc(id) {
+  return db.collection('eventos').doc(id).delete();
+}
+
+async function replaceAllEventos(array) {
+  const col  = db.collection('eventos');
+  const snap = await col.get();
+  const batch  = db.batch();
+  const newIds = new Set(array.map(ev => ev.id));
+  snap.forEach(doc => { if (!newIds.has(doc.id)) batch.delete(doc.ref); });
+  array.forEach(ev => batch.set(col.doc(ev.id), ev));
+  await batch.commit();
 }
 
 /* Devuelve { 'YYYY-MM-DD': 'titulo', ... } para el mini calendario */
@@ -126,5 +159,5 @@ function _renderNextEvent(ev) {
   if (lugarEl) lugarEl.innerHTML   = `<i class="fa-solid fa-location-dot"></i> ${ev.lugar}`;
 }
 
-/* Auto-render en la página principal */
-if (document.getElementById('agenda-timeline')) renderAgendaTimeline();
+/* Auto-render en la página principal — reactivo a cambios en Firestore */
+if (document.getElementById('agenda-timeline')) onEventosChange(renderAgendaTimeline);

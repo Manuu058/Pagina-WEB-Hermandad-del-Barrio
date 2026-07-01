@@ -258,6 +258,22 @@ small { font-size: .74rem; color: var(--muted); margin-top: .3rem; display: bloc
   padding: .75rem;
 }
 
+.login-forgot {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: .76rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  margin-top: .9rem;
+  padding: .2rem;
+}
+.login-forgot:hover { color: var(--gold); }
+
 /* ────────────────────────────────
    PANEL — CABECERA
 ──────────────────────────────── */
@@ -802,6 +818,211 @@ label { position: relative; }
 }
 
 /* ────────────────────────────────
+   RECORRIDO — BANDAS Y PUNTOS
+──────────────────────────────── */
+.rec-rows {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-bottom: .6rem;
+}
+
+.rec-row {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr auto;
+  gap: .6rem;
+  align-items: center;
+}
+
+.rec-escudo-upload {
+  position: relative;
+  flex-shrink: 0;
+}
+.rec-escudo-thumb {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 1px dashed rgba(201,168,76,.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  font-size: .85rem;
+  cursor: pointer;
+  overflow: hidden;
+}
+.rec-escudo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.rec-escudo-del {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #C0392B;
+  color: #fff;
+  border: none;
+  font-size: .55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.rec-puntos-list {
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+  margin: .6rem 0;
+}
+
+.rec-punto-row {
+  display: flex;
+  gap: .8rem;
+  align-items: flex-start;
+  background: var(--card-bg);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+}
+
+.rec-punto-num {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gold-dim);
+  color: var(--gold);
+  border: 1px solid rgba(201,168,76,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  font-weight: 700;
+  margin-top: .2rem;
+}
+
+.rec-punto-fields { flex: 1; min-width: 0; }
+.rec-punto-fields .fg-row:last-of-type { margin-bottom: .7rem; }
+
+.rec-pos-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+}
+
+.rec-checkbox {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .8rem;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  cursor: pointer;
+}
+.rec-checkbox input { width: auto; }
+
+.rec-punto-btns {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  flex-shrink: 0;
+}
+
+/* ────────────────────────────────
+   MINI-MAPA RECORRIDO (admin)
+──────────────────────────────── */
+.rec-mini-map-wrap {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(201,168,76,.25);
+  margin: .5rem 0 .9rem;
+}
+
+.rec-mini-map {
+  width: 100%;
+  height: 260px;
+  background: #14100a;
+}
+
+/* Pin del mapa — igual que en la web pública */
+.map-pin { width: 22px; height: 22px; position: relative; cursor: pointer; }
+.map-pin-dot {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #C9A84C, #8B6820);
+  border: 2px solid rgba(255,255,255,.85);
+  box-shadow: 0 0 0 3px rgba(201,168,76,.3), 0 2px 8px rgba(0,0,0,.6);
+  transition: transform .18s;
+}
+.map-pin:hover .map-pin-dot { transform: scale(1.3); }
+.map-pin::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid rgba(201,168,76,.4);
+  animation: admin-pin-pulse 2.4s ease-out infinite;
+  pointer-events: none;
+}
+.map-pin--salida .map-pin-dot { background: linear-gradient(135deg, #9B3FCC, #6B1FA0); }
+.map-pin--salida::after       { border-color: rgba(155,63,204,.5); }
+
+@keyframes admin-pin-pulse {
+  0%   { transform: scale(1);   opacity: .8; }
+  70%  { transform: scale(1.9); opacity: 0; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* Controles de zoom del mini-mapa */
+.rec-mini-map .leaflet-control-zoom {
+  border: 1px solid rgba(201,168,76,.35) !important;
+  border-radius: 3px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0,0,0,.5);
+}
+.rec-mini-map .leaflet-control-zoom a {
+  background: rgba(10,7,4,.92) !important;
+  color: var(--gold) !important;
+  border: none !important;
+  width: 26px !important;
+  height: 26px !important;
+  line-height: 26px !important;
+}
+.rec-mini-map .leaflet-control-zoom a:hover {
+  background: rgba(201,168,76,.85) !important;
+  color: #0a0704 !important;
+}
+.rec-mini-map .leaflet-control-zoom-in { border-bottom: 1px solid rgba(201,168,76,.25) !important; }
+
+/* Botón "Elegir en el mapa" por punto */
+.rec-pick-btn {
+  margin-top: .4rem;
+  width: 100%;
+  justify-content: center;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.rec-pick-btn--active {
+  color: var(--gold) !important;
+  border-color: var(--gold) !important;
+  background: var(--gold-dim) !important;
+  animation: rec-pick-pulse .9s ease-in-out infinite alternate;
+}
+@keyframes rec-pick-pulse {
+  from { opacity: 1; }
+  to   { opacity: .65; }
+}
+
+/* ────────────────────────────────
    RESPONSIVE
 ──────────────────────────────── */
 @media (max-width: 600px) {
@@ -813,4 +1034,8 @@ label { position: relative; }
   .fg-row    { grid-template-columns: 1fr; }
   .nl-titulo { white-space: normal; }
   .ph-nav .btn-ghost span { display: none; }
+  .rec-row   { grid-template-columns: 1fr; }
+  .rec-punto-row { flex-direction: column; }
+  .rec-punto-btns { flex-direction: row; }
+  .rec-mini-map { height: 200px; }
 }

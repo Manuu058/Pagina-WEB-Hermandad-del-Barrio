@@ -34,13 +34,12 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
   <!-- Firebase (backend: Firestore + Storage + Auth) -->
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js" defer></script>
 
   <!-- EmailJS (envío del formulario "Hazte Hermano") -->
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
 
   <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css">
@@ -1058,7 +1057,7 @@
   <div class="footer-main">
 
     <!-- Brand col -->
-    <div>
+    <div class="footer-brand">
       <picture>
         <source srcset="assets/images/escudo.webp" type="image/webp">
         <img src="assets/images/escudo.png" alt="Escudo Hermandad del Barrio" class="footer-escudo" loading="lazy">
@@ -1069,11 +1068,22 @@
         Fundada en 1975 bajo la advocación del Santísimo Cristo de la Reconciliación y Paz
         y Nuestra Señora de los Dolores. Una Hermandad de barrio con alma y devoción.
       </p>
-      <div class="footer-socials">
-        <a href="https://www.instagram.com/hermandad_del_barrio/" target="_blank" rel="noopener" class="soc-link" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
-        <a href="https://www.facebook.com/profile.php?id=100064348013005&locale=es_LA" target="_blank" rel="noopener" class="soc-link" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-        <a href="https://www.youtube.com/@HermandaddelBarrioReconciliaci" target="_blank" rel="noopener" class="soc-link" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
-        <a href="https://x.com/HdaddelBarrio" target="_blank" rel="noopener" class="soc-link" title="Twitter/X"><i class="fa-brands fa-x-twitter"></i></a>
+      <p class="footer-socials-label">Síguenos en redes sociales</p>
+      <div class="footer-socials-wrap">
+        <div class="footer-social-deco" aria-hidden="true">
+          <i class="fa-brands fa-instagram"></i>
+          <i class="fa-brands fa-facebook-f"></i>
+          <i class="fa-brands fa-youtube"></i>
+          <i class="fa-brands fa-x-twitter"></i>
+          <i class="fa-brands fa-whatsapp"></i>
+          <i class="fa-brands fa-tiktok"></i>
+        </div>
+        <div class="footer-socials">
+          <a href="https://www.instagram.com/hermandad_del_barrio/" target="_blank" rel="noopener" class="soc-link" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="https://www.facebook.com/profile.php?id=100064348013005&locale=es_LA" target="_blank" rel="noopener" class="soc-link" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="https://www.youtube.com/@HermandaddelBarrioReconciliaci" target="_blank" rel="noopener" class="soc-link" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+          <a href="https://x.com/HdaddelBarrio" target="_blank" rel="noopener" class="soc-link" title="Twitter/X"><i class="fa-brands fa-x-twitter"></i></a>
+        </div>
       </div>
     </div>
 
@@ -1491,14 +1501,14 @@ document.querySelectorAll('.hotspot').forEach(g => {
 });
 </script>
 
-<script src="js/firebase-config.js"></script>
-<script src="js/emailjs-config.js"></script>
-<script src="js/agenda.js"></script>
-<script src="js/noticias.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="js/recorrido.js"></script>
-<script src="js/velas.js"></script>
-<script src="js/patrimonio.js"></script>
+<script src="js/firebase-config.js" defer></script>
+<script src="js/emailjs-config.js" defer></script>
+<script src="js/agenda.js" defer></script>
+<script src="js/noticias.js" defer></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<script src="js/recorrido.js" defer></script>
+<script src="js/velas.js" defer></script>
+<script src="js/patrimonio.js" defer></script>
 <script src="js/main.js" defer></script>
 <!-- Behold.so — feed de Instagram. Activa cuando tengas tu Widget ID -->
 <script src="https://w.behold.so/widget.js" type="module"></script>

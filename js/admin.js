@@ -487,9 +487,9 @@ function triggerImport() {
 function importJSON(e) {
   const file = e.target.files[0];
   if (!file) return;
-  _readJSONFile(file, data => {
+  _readJSONFile(file, async data => {
     if (!Array.isArray(data)) throw new Error();
-    saveNoticias(data);
+    await replaceAllNoticias(data);
     renderList();
     showToast(`${data.length} noticias importadas correctamente`);
   });
@@ -500,8 +500,8 @@ function resetDefault() {
   showModal('reset-modal');
 }
 
-function executeReset() {
-  localStorage.removeItem(NOTICIAS_KEY);
+async function executeReset() {
+  await replaceAllNoticias(NOTICIAS_DEFAULT);
   hideModal('reset-modal');
   renderList();
   showToast('Noticias restauradas a los datos originales');
@@ -631,9 +631,8 @@ function closeEventForm(instant = false) {
   setTimeout(() => { drawer.hidden = true; overlay.hidden = true; }, instant ? 0 : 330);
 }
 
-function saveEvento(e) {
+async function saveEvento(e) {
   e.preventDefault();
-  const eventos    = getEventos();
   const existingId = document.getElementById('ef-id').value;
   const id         = existingId || ('ev' + Date.now().toString(36));
 
@@ -646,10 +645,7 @@ function saveEvento(e) {
     lugar:    document.getElementById('ef-lugar').value.trim(),
   };
 
-  const idx = eventos.findIndex(x => x.id === id);
-  if (idx >= 0) eventos[idx] = evento;
-  else eventos.push(evento);
-  saveEventos(eventos);
+  await setEventoDoc(id, evento);
 
   closeEventForm();
   showToast(existingId ? 'Acto actualizado correctamente' : 'Acto añadido correctamente');
@@ -668,9 +664,9 @@ function confirmDelEvento(id) {
   showModal('del-ev-modal');
 }
 
-function executeDelEvento() {
+async function executeDelEvento() {
   if (!pendingDelEvId) return;
-  saveEventos(getEventos().filter(x => x.id !== pendingDelEvId));
+  await deleteEventoDoc(pendingDelEvId);
   hideModal('del-ev-modal');
   pendingDelEvId = null;
   renderEventosList();
@@ -683,8 +679,8 @@ function resetEventosDefault() {
   showModal('reset-ev-modal');
 }
 
-function executeResetEventos() {
-  localStorage.removeItem(EVENTOS_KEY);
+async function executeResetEventos() {
+  await replaceAllEventos(EVENTOS_DEFAULT);
   hideModal('reset-ev-modal');
   renderEventosList();
   showToast('Actos restaurados a los datos originales');
@@ -703,9 +699,9 @@ function triggerImportEventos() {
 function importEventosJSON(e) {
   const file = e.target.files[0];
   if (!file) return;
-  _readJSONFile(file, data => {
+  _readJSONFile(file, async data => {
     if (!Array.isArray(data)) throw new Error();
-    saveEventos(data);
+    await replaceAllEventos(data);
     renderEventosList();
     showToast(`${data.length} actos importados correctamente`);
   });
@@ -724,7 +720,7 @@ function renderVelasSection() {
   document.getElementById('vc-base').value      = cfg.base;
 }
 
-function saveVelasConfigForm(e) {
+async function saveVelasConfigForm(e) {
   e.preventDefault();
   const base = parseInt(document.getElementById('vc-base').value, 10);
 
@@ -735,13 +731,13 @@ function saveVelasConfigForm(e) {
     base:      Number.isFinite(base) && base >= 0 ? base : VELA_CONFIG_DEFAULT.base,
   };
 
-  saveVelaConfig(cfg);
+  await saveVelaConfig(cfg);
   renderVelasSection();
   showToast('Configuración de la vela virtual guardada');
 }
 
-function resetVelasConfigDefault() {
-  localStorage.removeItem(VELA_CONFIG_KEY);
+async function resetVelasConfigDefault() {
+  await saveVelaConfig(VELA_CONFIG_DEFAULT);
   renderVelasSection();
   showToast('Vela virtual restaurada a los valores originales');
 }
@@ -847,8 +843,7 @@ async function duplicatePatrimonioItem(id) {
     if (dataUrl) await saveImage(`${newId}_main`, dataUrl).catch(() => {});
   }
 
-  items.push(copia);
-  setPatrimonio(items);
+  await setPatrimonioDoc(newId, copia);
   renderPatrimonioList();
   showToast('Pieza duplicada correctamente');
 }
@@ -988,10 +983,7 @@ async function savePatrimonioItem(e) {
       fechaAlta: prevItem?.fechaAlta || new Date().toISOString().slice(0, 10),
     };
 
-    const idx = items.findIndex(x => x.id === id);
-    if (idx >= 0) items[idx] = item;
-    else items.push(item);
-    setPatrimonio(items);
+    await setPatrimonioDoc(id, item);
 
     if (patImgState.mainNew) {
       await saveImage(`${id}_main`, patImgState.mainNew);
@@ -1025,10 +1017,9 @@ function confirmDelPat(id) {
 
 async function executeDelPat() {
   if (!pendingDelPatId) return;
-  const items = getPatrimonio();
-  const p     = items.find(x => x.id === pendingDelPatId);
+  const p = getPatrimonio().find(x => x.id === pendingDelPatId);
   if (p?.hasImage) await deleteImage(`${p.id}_main`).catch(() => {});
-  setPatrimonio(items.filter(x => x.id !== pendingDelPatId));
+  await deletePatrimonioDoc(pendingDelPatId);
   hideModal('del-pat-modal');
   pendingDelPatId = null;
   renderPatrimonioList();
@@ -1048,9 +1039,9 @@ function triggerImportPat() {
 function importPatJSON(e) {
   const file = e.target.files[0];
   if (!file) return;
-  _readJSONFile(file, data => {
+  _readJSONFile(file, async data => {
     if (!Array.isArray(data)) throw new Error();
-    setPatrimonio(data);
+    await replaceAllPatrimonio(data);
     renderPatrimonioList();
     showToast(`${data.length} piezas importadas correctamente`);
   });
@@ -1061,8 +1052,8 @@ function resetPatDefault() {
   showModal('reset-pat-modal');
 }
 
-function executeResetPat() {
-  localStorage.removeItem(PATRIMONIO_KEY);
+async function executeResetPat() {
+  await replaceAllPatrimonio(PATRIMONIO_DEFAULT);
   hideModal('reset-pat-modal');
   renderPatrimonioList();
   showToast('Patrimonio restaurado a los datos originales');
@@ -1369,7 +1360,7 @@ async function saveRecorridoForm(e) {
       return;
     }
 
-    saveRecorridoData({ dia, itinerario, bandas, puntos });
+    await saveRecorridoData({ dia, itinerario, bandas, puntos });
 
     showToast('Recorrido actualizado correctamente');
   } catch (err) {
@@ -1388,7 +1379,7 @@ function resetRecorridoDefault() {
 }
 
 async function executeResetRecorrido() {
-  localStorage.removeItem(RECORRIDO_KEY);
+  await saveRecorridoData(RECORRIDO_DEFAULT);
   hideModal('reset-rec-modal');
   renderRecorridoSection();
   showToast('Recorrido restaurado a los datos originales');
@@ -1409,21 +1400,15 @@ function showChangePwd() {
   setTimeout(() => document.getElementById('pwd-current').focus(), 60);
 }
 
-function changePwd() {
+async function changePwd() {
   const current = document.getElementById('pwd-current').value;
   const next    = document.getElementById('pwd-new').value;
   const confirm = document.getElementById('pwd-confirm').value;
   const err     = document.getElementById('pwd-err');
   err.hidden    = true;
 
-  if (current !== getPin()) {
-    err.textContent = 'La contraseña actual no es correcta.';
-    err.hidden = false;
-    document.getElementById('pwd-current').focus();
-    return;
-  }
-  if (next.length < 4) {
-    err.textContent = 'La nueva contraseña debe tener al menos 4 caracteres.';
+  if (next.length < 6) {
+    err.textContent = 'La nueva contraseña debe tener al menos 6 caracteres.';
     err.hidden = false;
     document.getElementById('pwd-new').focus();
     return;
@@ -1435,9 +1420,19 @@ function changePwd() {
     return;
   }
 
-  localStorage.setItem(PIN_KEY, next);
-  hideModal('pwd-modal');
-  showToast('Contraseña cambiada correctamente');
+  try {
+    const user       = auth.currentUser;
+    const credential = firebase.auth.EmailAuthProvider.credential(user.email, current);
+    await user.reauthenticateWithCredential(credential);
+    await user.updatePassword(next);
+    hideModal('pwd-modal');
+    showToast('Contraseña cambiada correctamente');
+  } catch (_) {
+    err.textContent = 'La contraseña actual no es correcta.';
+    err.hidden = false;
+    document.getElementById('pwd-current').value = '';
+    document.getElementById('pwd-current').focus();
+  }
 }
 
 /* ── MODALES ── */
@@ -1523,12 +1518,13 @@ document.addEventListener('keydown', e => {
 
 /* ── INIT ── */
 
-document.getElementById('pin-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') checkPin();
+document.getElementById('login-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
 });
 
 document.getElementById('f-extracto').addEventListener('input', updateCharCount);
 
-if (sessionStorage.getItem(AUTH_KEY) === '1') {
-  showPanel();
-}
+auth.onAuthStateChanged(user => {
+  if (user) showPanel();
+  else showLoginScreen();
+});

@@ -94,7 +94,7 @@ function onNoticiasChange(cb) {
 }
 
 db.collection('noticias').onSnapshot(async snap => {
-  if (snap.empty && !_noticiasReady && !_noticiasSeeding) {
+  if (snap.empty && !_noticiasReady && !_noticiasSeeding && auth.currentUser) {
     _noticiasSeeding = true;
     const batch = db.batch();
     NOTICIAS_DEFAULT.forEach(n => batch.set(db.collection('noticias').doc(n.id), n));
@@ -130,41 +130,28 @@ async function replaceAllNoticias(array) {
    Misma clave determinista que antes (`${id}_main`, `${id}_sec_${i}`),
    compartida globalmente con patrimonio.js y admin.js sin cambios. */
 
-const _imgUrlCache = new Map();
+/* Imágenes guardadas como base64 en Firestore (colección 'imagenes'),
+   sin necesidad de Firebase Storage. Mismo contrato de API que antes. */
 
-function _imgRef(key) {
-  return storage.ref('imagenes/' + key + '.jpg');
-}
+const _imgCache = new Map();
+const _imgCol   = () => db.collection('imagenes');
 
 async function saveImage(key, dataUrl) {
-  const blob = await (await fetch(dataUrl)).blob();
-  await _imgRef(key).put(blob, { contentType: 'image/jpeg' });
-  _imgUrlCache.delete(key);
+  await _imgCol().doc(key).set({ dataUrl });
+  _imgCache.set(key, dataUrl);
 }
 
 async function getImage(key) {
-  if (_imgUrlCache.has(key)) return _imgUrlCache.get(key);
-  try {
-    const url = await _imgRef(key).getDownloadURL();
-    _imgUrlCache.set(key, url);
-    return url;
-  } catch (err) {
-    if (err && err.code === 'storage/object-not-found') {
-      _imgUrlCache.set(key, null);
-      return null;
-    }
-    throw err;
-  }
+  if (_imgCache.has(key)) return _imgCache.get(key);
+  const snap = await _imgCol().doc(key).get();
+  const val  = snap.exists ? (snap.data().dataUrl || null) : null;
+  _imgCache.set(key, val);
+  return val;
 }
 
 async function deleteImage(key) {
-  _imgUrlCache.delete(key);
-  try {
-    await _imgRef(key).delete();
-  } catch (err) {
-    if (err && err.code === 'storage/object-not-found') return;
-    throw err;
-  }
+  _imgCache.delete(key);
+  await _imgCol().doc(key).delete().catch(() => {});
 }
 
 async function deleteAllNoticiaImages(n) {

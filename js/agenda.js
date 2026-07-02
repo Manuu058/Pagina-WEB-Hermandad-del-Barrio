@@ -47,7 +47,7 @@ function onEventosChange(cb) {
 }
 
 db.collection('eventos').onSnapshot(async snap => {
-  if (snap.empty && !_eventosReady && !_eventosSeeding) {
+  if (snap.empty && !_eventosReady && !_eventosSeeding && auth.currentUser) {
     _eventosSeeding = true;
     const batch = db.batch();
     EVENTOS_DEFAULT.forEach(ev => batch.set(db.collection('eventos').doc(ev.id), ev));

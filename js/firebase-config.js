@@ -1,43 +1,15 @@
-/* ============================================================
-   HERMANDAD DEL BARRIO | MEDINA SIDONIA
-   Configuración de Firebase (Firestore + Storage + Auth)
-   ============================================================
-
-   ╔══════════════════════════════════════════════════════════════╗
-   ║  PASOS PARA ACTIVAR EL BACKEND REAL                          ║
-   ║                                                                ║
-   ║  1. Ve a https://console.firebase.google.com y crea un       ║
-   ║     proyecto (gratuito).                                      ║
-   ║  2. Activa Firestore Database (modo producción).             ║
-   ║  3. Activa Storage.                                           ║
-   ║  4. Activa Authentication → método "Correo electrónico/      ║
-   ║     contraseña" → crea ahí los usuarios de la Junta.          ║
-   ║  5. En Project settings → tus apps → añade una app web y     ║
-   ║     copia aquí abajo el objeto de configuración.              ║
-   ║  6. Pega las reglas de seguridad de Firestore y Storage que   ║
-   ║     te haya entregado (Firestore Database → Rules / Storage   ║
-   ║     → Rules).                                                 ║
-   ║  7. En Authentication → Settings → Authorized domains, añade  ║
-   ║     el dominio donde se publique la web (ej. tu dominio de    ║
-   ║     GitHub Pages).                                            ║
-   ╚══════════════════════════════════════════════════════════════╝
-*/
-
 const firebaseConfig = {
-  apiKey:            "TU_API_KEY",
-  authDomain:         "TU_PROYECTO.firebaseapp.com",
-  projectId:          "TU_PROYECTO",
-  storageBucket:      "TU_PROYECTO.appspot.com",
-  messagingSenderId:  "TU_SENDER_ID",
-  appId:              "TU_APP_ID",
+  apiKey:            "AIzaSyDm_XiKp9tSWb0Y0eKMgJQyAN3PewcWD38",
+  authDomain:        "pagina-web-hermandad-582af.firebaseapp.com",
+  projectId:         "pagina-web-hermandad-582af",
+  storageBucket:     "pagina-web-hermandad-582af.firebasestorage.app",
+  messagingSenderId: "343628499518",
+  appId:             "1:343628499518:web:2bc3f7fdaea1c7ec6d1f6f",
 };
 
 firebase.initializeApp(firebaseConfig);
 
-window.db      = firebase.firestore();
-window.auth    = firebase.auth();
-window.storage = firebase.storage();
+const db   = firebase.firestore();
+const auth = firebase.auth();
 
-/* La sesión del panel se cierra al cerrar la pestaña/navegador,
-   igual que el comportamiento anterior basado en sessionStorage. */
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});

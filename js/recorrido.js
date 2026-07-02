@@ -42,7 +42,9 @@ const _recorridoDocRef = db.collection('recorrido').doc('data');
 
 _recorridoDocRef.onSnapshot(async snap => {
   if (!snap.exists) {
-    try { await _recorridoDocRef.set(RECORRIDO_DEFAULT); } catch (err) { console.error('No se pudo sembrar el recorrido por defecto', err); }
+    if (auth.currentUser) {
+      try { await _recorridoDocRef.set(RECORRIDO_DEFAULT); } catch (err) { console.error('No se pudo sembrar el recorrido por defecto', err); }
+    }
     return;
   }
   const data = snap.data();
@@ -125,22 +127,12 @@ function renderRecorridoMap(puntos) {
     .addAttribution('© OpenStreetMap, © CARTO')
     .addTo(map);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_nolabels/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
     subdomains: 'abcd',
   }).addTo(map);
 
-  /* Línea del recorrido — trazo dorado discontinuo */
   const latlngs = puntos.map(p => [p.lat, p.lng]);
-  const route = L.polyline(latlngs, {
-    color: '#C9A84C',
-    weight: 3,
-    opacity: .85,
-    dashArray: '1,10',
-    lineCap: 'round',
-    className: 'recorrido-route-line',
-  }).addTo(map);
-  animateRouteLine(route);
 
   const markers = puntos.map((p, i) => {
     const icon = L.divIcon({
@@ -183,18 +175,6 @@ function renderRecorridoMap(puntos) {
   };
   el.addEventListener('click', enableScroll, { once: true });
   if (hint) hint.addEventListener('click', () => { enableScroll(); map.scrollWheelZoom.enable(); }, { once: true });
-}
-
-/* Efecto de trazo "en movimiento" sobre la línea del recorrido */
-function animateRouteLine(polyline) {
-  let offset = 0;
-  function step() {
-    offset = (offset - 0.4 + 1000) % 1000;
-    const path = polyline.getElement && polyline.getElement();
-    if (path) path.style.strokeDashoffset = offset;
-    requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
 }
 
 function focusRecorridoPunto(i) {

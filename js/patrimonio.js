@@ -43,7 +43,7 @@ function onPatrimonioChange(cb) {
 }
 
 db.collection('patrimonio').onSnapshot(async snap => {
-  if (snap.empty && !_patrimonioReady && !_patrimonioSeeding) {
+  if (snap.empty && !_patrimonioReady && !_patrimonioSeeding && auth.currentUser) {
     _patrimonioSeeding = true;
     const batch = db.batch();
     PATRIMONIO_DEFAULT.forEach(p => batch.set(db.collection('patrimonio').doc(p.id), p));

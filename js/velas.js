@@ -29,7 +29,9 @@ const _velaConfigRef = db.collection('velas').doc('config');
 
 _velaConfigRef.onSnapshot(async snap => {
   if (!snap.exists) {
-    try { await _velaConfigRef.set(VELA_CONFIG_DEFAULT); } catch (err) { console.error('No se pudo sembrar la config de la vela', err); }
+    if (auth.currentUser) {
+      try { await _velaConfigRef.set(VELA_CONFIG_DEFAULT); } catch (err) { console.error('No se pudo sembrar la config de la vela', err); }
+    }
     return;
   }
   _velaConfigCache = { ...VELA_CONFIG_DEFAULT, ...snap.data() };
@@ -49,7 +51,9 @@ let _velaCounterDelta = 0;
 
 _velaCounterRef.onSnapshot(async snap => {
   if (!snap.exists) {
-    try { await _velaCounterRef.set({ delta: 0 }); } catch (err) { console.error('No se pudo crear el contador de velas', err); }
+    if (auth.currentUser) {
+      try { await _velaCounterRef.set({ delta: 0 }); } catch (err) { console.error('No se pudo crear el contador de velas', err); }
+    }
     return;
   }
   _velaCounterDelta = snap.data().delta || 0;

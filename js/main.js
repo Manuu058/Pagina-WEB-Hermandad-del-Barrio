@@ -3,22 +3,17 @@
    JavaScript principal
    ============================================================ */
 
-/* === NAVBAR SCROLL === */
+/* === NAVBAR SCROLL + ACTIVE NAV + PARALLAX (un solo listener, throttled con rAF) === */
 const navbar = document.querySelector('.navbar');
 const scrollThreshold = 60;
+const navSections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+const heroContent = document.querySelector('.hero-content');
 
-window.addEventListener('scroll', () => {
-  navbar.classList.toggle('solid', window.scrollY > scrollThreshold);
-  updateActiveNav();
-}, { passive: true });
-
-/* === ACTIVE NAV LINK === */
 function updateActiveNav() {
-  const sections = document.querySelectorAll('section[id]');
-  const navLinks = document.querySelectorAll('.nav-links a');
   let current = '';
 
-  sections.forEach(section => {
+  navSections.forEach(section => {
     const top = section.getBoundingClientRect().top;
     if (top <= 120) current = section.id;
   });
@@ -27,6 +22,27 @@ function updateActiveNav() {
     link.classList.toggle('active', link.getAttribute('href') === '#' + current);
   });
 }
+
+let scrollTicking = false;
+function onScroll() {
+  const scrolled = window.scrollY;
+  navbar.classList.toggle('solid', scrolled > scrollThreshold);
+  updateActiveNav();
+
+  if (heroContent && scrolled < window.innerHeight) {
+    heroContent.style.transform = `translateY(${scrolled * 0.25}px)`;
+  }
+}
+
+window.addEventListener('scroll', () => {
+  if (!scrollTicking) {
+    scrollTicking = true;
+    requestAnimationFrame(() => {
+      onScroll();
+      scrollTicking = false;
+    });
+  }
+}, { passive: true });
 
 /* === MOBILE MENU === */
 const hamburger = document.querySelector('.hamburger');
@@ -505,16 +521,6 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
-
-/* === EMBLEM PARALLAX === */
-window.addEventListener('scroll', () => {
-  const hero = document.querySelector('.hero-content');
-  if (!hero) return;
-  const scrolled = window.scrollY;
-  if (scrolled < window.innerHeight) {
-    hero.style.transform = `translateY(${scrolled * 0.25}px)`;
-  }
-}, { passive: true });
 
 /* === INSTAGRAM EMBED NOTE (placeholder logic) === */
 /* Cuando la cuenta de Instagram esté disponible, reemplazar

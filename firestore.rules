@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isJunta() {
+      return request.auth != null;
+    }
+
+    match /eventos/{id} {
+      allow read: if true;
+      allow write: if isJunta();
+    }
+
+    match /noticias/{id} {
+      allow read: if true;
+      allow write: if isJunta();
+    }
+
+    match /patrimonio/{id} {
+      allow read: if true;
+      allow write: if isJunta();
+    }
+
+    match /recorrido/{id} {
+      allow read: if true;
+      allow write: if isJunta();
+    }
+
+    match /imagenes/{id} {
+      allow read: if true;
+      allow write: if isJunta();
+    }
+
+    match /velas/config {
+      allow read: if true;
+      allow write: if isJunta();
+    }
+
+    /* Contador de velas: lectura pública, incremento público de 1 en 1
+       (para que cualquier visitante pueda "encender una vela"),
+       cualquier otro cambio requiere sesión de Junta. */
+    match /velas/counter {
+      allow read: if true;
+      allow create: if isJunta();
+      allow update: if isJunta() || (
+        request.resource.data.keys().hasOnly(['delta']) &&
+        request.resource.data.delta == resource.data.delta + 1
+      );
+      allow delete: if false;
+    }
+  }
+}
